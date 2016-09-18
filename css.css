@@ -1,0 +1,58 @@
+* {
+  font-family: 'Orbitron', sans-serif;
+}
+
+h1, h3 {
+  text-align: center;
+}
+
+.red {
+  color: red;
+  text-align: right;
+}
+
+.middle {
+  position: fixed;
+  margin: auto;
+  left: 50vw;
+  transform: translate(-50%, 0);
+}
+
+.right, .left {
+  position: fixed;
+  margin: auto;
+  top: 0;
+}
+
+.left {
+  left: 10vw;
+}
+
+.right {
+  right: 10vw;
+}
+
+canvas {
+  display: block;
+  position: fixed;
+  border: 2px solid #000;
+  margin: auto;
+  top: 50px;
+  bottom: 0;
+  right: 0;
+  left: 0;
+}
+
+div.footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  height: 40px;
+  width: 100%;
+  padding-top: 0px;
+  text-align: center;
+  font-size: 14px;
+  margin-top: 20px;
+  background: inherit;
+  box-shadow: 0px -2px 5px #0C090A;
+}
