@@ -193,8 +193,8 @@
       /* Normal speed is 1, if boost button is pressed, double velocity.
        Recharge boost if a certain amount of time time has elapsed since the boost was last used
        */
-      var vel = 1;
-      if (player1.boosted && player1.boost > 0) {
+       var vel = 1;
+       if (player1.boosted && player1.boost > 0) {
         vel = 2;
         player1.boost--;
         player1.boostFrame = frames;
@@ -205,17 +205,17 @@
 
       switch(player1.direction) {
         case LEFT:
-          nx1-=vel;
-          break;
+        nx1-=vel;
+        break;
         case UP:
-          ny1-=vel;
-          break;
+        ny1-=vel;
+        break;
         case RIGHT:
-          nx1+=vel;
-          break;
+        nx1+=vel;
+        break;
         case DOWN:
-          ny1+=vel;
-          break;
+        ny1+=vel;
+        break;
       }
 
       vel = 1;
@@ -230,17 +230,17 @@
 
       switch(player2.direction) {
         case LEFT:
-          nx2-=vel;
-          break;
+        nx2-=vel;
+        break;
         case UP:
-          ny2-=vel;
-          break;
+        ny2-=vel;
+        break;
         case RIGHT:
-          nx2+=vel;
-          break;
+        nx2+=vel;
+        break;
         case DOWN:
-          ny2+=vel;
-          break;
+        ny2+=vel;
+        break;
       }
 
       // check for deaths and draws
@@ -301,14 +301,14 @@
       for (var y = 0; y < grid.height; y++) {
         switch (grid.get(x, y)) {
           case EMPTY:
-            ctx.fillStyle = "#ccc";
-            break;
+          ctx.fillStyle = "#ccc";
+          break;
           case PLAYER1:
-            ctx.fillStyle = "#000";
-            break;
+          ctx.fillStyle = "#000";
+          break;
           case PLAYER2:
-            ctx.fillStyle = "#f00";
-            break;
+          ctx.fillStyle = "#f00";
+          break;
         }
         ctx.fillRect(x * tw, y * th, tw, th);
       }
