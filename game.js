@@ -1,4 +1,4 @@
-// Last updated 18/19/16
+// Last updated 19/19/16
 
 (function ifi() {
 
@@ -13,7 +13,7 @@
   var KEY_LEFT2 = 37, KEY_UP2 = 38, KEY_RIGHT2 = 39, KEY_DOWN2 = 40, KEY_BOOST2 = 13;
 
   // Game Settings
-  var MAX_BOOST = 30;
+  var MAX_BOOST = 30, RECHARGE_FRAMES = 300;
 
   var grid = {
 
@@ -52,26 +52,20 @@
     boosted: null,
     boostframe: null,
 
-    init: function(d, x, y, s, b) {
+    init: function(d, x, y, b) {
       this.direction = d;
-      this.speed = s;
 
       this._queue = [];
       this.insert(x, y);
 
       this.boost = b;
       this.boosted = false;
-      this.boostframe = frames;
     },
 
     insert: function(x, y) {
       this._queue.unshift({x:x, y:y});
       this.last = this._queue[0]
     },
-
-    remove: function() {
-      return this._queue[this._queue.length-1];
-    }
   }
 
   var player2 = {
@@ -83,26 +77,20 @@
     boosted: null,
     boostframe: null,
 
-    init: function(d, x, y, s, b) {
+    init: function(d, x, y, b) {
       this.direction = d;
-      this.speed = s;
 
       this._queue = [];
       this.insert(x, y);
 
       this.boost = b;
       this.boosted = false;
-      this.boostframe = frames;
     },
 
     insert: function(x, y) {
       this._queue.unshift({x:x, y:y});
       this.last = this._queue[0]
     },
-
-    remove: function() {
-      return this._queue[this._queue.length-1];
-    }
   }
 
   // Game objects
@@ -141,14 +129,16 @@
   }
 
   function init() {
+    // initate empty grid with all 0s
     grid.init(EMPTY, COLS, ROWS);
 
+    // set starting positions
     var sp = {x: Math.floor(COLS/2-1), y: Math.floor(ROWS/2)};
-    player1.init(LEFT, sp.x, sp.y, 100, MAX_BOOST);
+    player1.init(LEFT, sp.x, sp.y, MAX_BOOST);
     grid.set(PLAYER1, sp.x, sp.y);
 
     sp = {x: Math.floor(COLS/2), y: Math.floor(ROWS/2)};
-    player2.init(RIGHT, sp.x, sp.y, 100, MAX_BOOST);
+    player2.init(RIGHT, sp.x, sp.y, MAX_BOOST);
     grid.set(PLAYER2, sp.x, sp.y);
 
   }
@@ -184,6 +174,8 @@
     }
 
     if (frames%3 === 0) {
+      // nx1, ny1 are the next grid positions of player 1
+      // set nx1, ny1 to last grid position, then adjust to set next grid position, then stack this object to the front of the player1._queue array
       var nx1 = player1.last.x;
       var ny1 = player1.last.y;
 
@@ -193,29 +185,29 @@
       /* Normal speed is 1, if boost button is pressed, double velocity.
        Recharge boost if a certain amount of time time has elapsed since the boost was last used
        */
-       var vel = 1;
-       if (player1.boosted && player1.boost > 0) {
+      var vel = 1;
+      if (player1.boosted && player1.boost > 0) {
         vel = 2;
         player1.boost--;
         player1.boostFrame = frames;
       }
-      if (frames > player1.boostframe + 300 && player1.boost < MAX_BOOST && frames%9===0) {
+      if (frames > player1.boostframe + RECHARGE_FRAMES && player1.boost < MAX_BOOST && frames%9===0) {
         player1.boost++;
       }
 
       switch(player1.direction) {
         case LEFT:
-        nx1-=vel;
-        break;
+          nx1-=vel;
+          break;
         case UP:
-        ny1-=vel;
-        break;
+          ny1-=vel;
+          break;
         case RIGHT:
-        nx1+=vel;
-        break;
+          nx1+=vel;
+          break;
         case DOWN:
-        ny1+=vel;
-        break;
+          ny1+=vel;
+          break;
       }
 
       vel = 1;
@@ -224,26 +216,26 @@
         player2.boost--;
         player2.boostframe = frames;
       }
-      if (frames > player2.boostframe + 300 && player2.boost < MAX_BOOST && frames%9===0) {
+      if (frames > player2.boostframe + RECHARGE_FRAMES && player2.boost < MAX_BOOST && frames%9===0) {
         player2.boost++;
       }
 
       switch(player2.direction) {
         case LEFT:
-        nx2-=vel;
-        break;
+          nx2-=vel;
+          break;
         case UP:
-        ny2-=vel;
-        break;
+          ny2-=vel;
+          break;
         case RIGHT:
-        nx2+=vel;
-        break;
+          nx2+=vel;
+          break;
         case DOWN:
-        ny2+=vel;
-        break;
+          ny2+=vel;
+          break;
       }
 
-      // check for deaths and draws
+      // check for deaths or draws
       var p1dead = false, p2dead = false;
       if (nx1 < 0 || nx1 > grid.width-1 || ny1 < 0 || ny1 > grid.height-1) {
         p1dead = true;
@@ -256,10 +248,7 @@
         if (grid.get(nx1, ny1) !== EMPTY) {
           p1dead = true;
         } else {
-          var tail1 = player1.remove();
-          grid.set(PLAYER1, tail1.x, tail1.y);
-          tail1.x = nx1;
-          tail1.y = ny1;
+          var tail1 = {x:nx1, y:ny1};
         }
       }
 
@@ -267,10 +256,7 @@
         if (grid.get(nx2, ny2) !== EMPTY) {
           p2dead = true;
         } else {
-          var tail2 = player2.remove();
-          grid.set(PLAYER2, tail2.x, tail2.y);
-          tail2.x = nx2;
-          tail2.y = ny2;
+          var tail2 = {x:nx2, y:ny2};
         }
       }
 
@@ -284,6 +270,7 @@
         return init();
       }
 
+      // update grid and player objects to match new player head positions
       grid.set(PLAYER1, tail1.x, tail1.y);
       grid.set(PLAYER2, tail2.x, tail2.y);
 
@@ -296,19 +283,18 @@
     var tw = canvas.width/grid.width;
     var th = canvas.height/grid.height;
 
-
     for (var x = 0; x < grid.width; x++) {
       for (var y = 0; y < grid.height; y++) {
         switch (grid.get(x, y)) {
           case EMPTY:
-          ctx.fillStyle = "#ccc";
-          break;
+            ctx.fillStyle = "#ccc";
+            break;
           case PLAYER1:
-          ctx.fillStyle = "#000";
-          break;
+            ctx.fillStyle = "#000";
+            break;
           case PLAYER2:
-          ctx.fillStyle = "#f00";
-          break;
+            ctx.fillStyle = "#f00";
+            break;
         }
         ctx.fillRect(x * tw, y * th, tw, th);
       }
@@ -321,7 +307,6 @@
     ctx.fillText(score.p2, canvas.width-30, canvas.height-30);
     ctx.fillText("BOOST: " + player2.boost, canvas.width-137, canvas.height-10);
   }
-
 
   main();
 
