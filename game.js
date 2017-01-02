@@ -1,4 +1,4 @@
-// Last updated 19/19/16
+"use strict";
 
 (function ifi() {
 
@@ -9,7 +9,8 @@
   // Directions
   var LEFT = 0, UP = 1, RIGHT = 2, DOWN = 3;
   // KeyCodes
-  var KEY_LEFT1 = 65, KEY_UP1 = 87, KEY_RIGHT1 = 68, KEY_DOWN1 = 83, KEY_BOOST1 = 32;
+  var KEY_ESC = 27, KEY_SPACE = 32;
+  var KEY_LEFT1 = 65, KEY_UP1 = 87, KEY_RIGHT1 = 68, KEY_DOWN1 = 83, KEY_BOOST1 = 66;
   var KEY_LEFT2 = 37, KEY_UP2 = 38, KEY_RIGHT2 = 39, KEY_DOWN2 = 40, KEY_BOOST2 = 13;
 
   // Game Settings
@@ -94,7 +95,7 @@
   }
 
   // Game objects
-  var canvas, ctx, keystate1, frames, score = {p1: 0, p2: 0};
+  var canvas, ctx, keystate1, keystate2, animationRef, frames, score = {p1: 0, p2: 0}, isPaused, gameStarted;
 
   function main() {
     canvas = document.createElement("canvas");
@@ -109,20 +110,41 @@
     keystate1 = {};
     keystate2 = {};
 
+    isPaused = false;
+    gameStarted = false;
+
     document.addEventListener("keydown", function(evt) {
-      if (evt.keyCode >= KEY_LEFT2 && evt.keyCode <= KEY_DOWN2 || evt.keyCode === KEY_BOOST2) {
+      if (evt.keyCode === KEY_LEFT2 ||
+        evt.keyCode === KEY_UP2 ||
+        evt.keyCode === KEY_RIGHT2 ||
+        evt.keyCode === KEY_DOWN2 ||
+        evt.keyCode === KEY_BOOST2) {
         keystate2[evt.keyCode] = true;
       } else {
         keystate1[evt.keyCode] = true;
       }
+      if (evt.keyCode === KEY_ESC) {
+        if (!isPaused && gameStarted) {
+          isPaused = true;
+        } else {
+          isPaused = false;
+        }
+      }
+      if (evt.keyCode === KEY_SPACE) {
+        gameStarted = true;
+      }
     });
     document.addEventListener("keyup", function(evt) {
-      if (evt.keyCode >= KEY_LEFT2 && evt.keyCode <= KEY_DOWN2 || evt.keyCode === KEY_BOOST2) {
+      if (evt.keyCode === KEY_LEFT2 ||
+        evt.keyCode === KEY_UP2 ||
+        evt.keyCode === KEY_RIGHT2 ||
+        evt.keyCode === KEY_DOWN2 ||
+        evt.keyCode === KEY_BOOST2) {
         delete keystate2[evt.keyCode];
       } else {
         delete keystate1[evt.keyCode];
       }
-    })
+    });
 
     init();
     loop();
@@ -141,13 +163,14 @@
     player2.init(RIGHT, sp.x, sp.y, MAX_BOOST);
     grid.set(PLAYER2, sp.x, sp.y);
 
+    gameStarted = false;
   }
 
   function loop() {
     update();
     draw();
 
-    window.requestAnimationFrame(loop, canvas);
+    animationRef = window.requestAnimationFrame(loop, canvas);
   }
 
   function update() {
@@ -173,7 +196,8 @@
       player2.boosted = false;
     }
 
-    if (frames%3 === 0) {
+    // every 3 frames, update player positions - around 20 times / sec if refresh rate of requestAnimationFrame is 60 times / sec
+    if (frames%3 === 0 && !isPaused && gameStarted) {
       // nx1, ny1 are the next grid positions of player 1
       // set nx1, ny1 to last grid position, then adjust to set next grid position, then stack this object to the front of the player1._queue array
       var nx1 = player1.last.x;
@@ -282,6 +306,9 @@
   function draw() {
     var tw = canvas.width/grid.width;
     var th = canvas.height/grid.height;
+    var redValue = frames%255<128 ? (frames%255)*2 : (255-frames%255)*2;
+    var p1Colour = "rgb(" + redValue + ",255,0)";
+    var p2Colour = "rgb(" + redValue + ",0,255)";
 
     for (var x = 0; x < grid.width; x++) {
       for (var y = 0; y < grid.height; y++) {
@@ -290,22 +317,34 @@
             ctx.fillStyle = "#ccc";
             break;
           case PLAYER1:
-            ctx.fillStyle = "#000";
+            ctx.fillStyle = p1Colour;
             break;
           case PLAYER2:
-            ctx.fillStyle = "#f00";
+            ctx.fillStyle = p2Colour;
             break;
         }
         ctx.fillRect(x * tw, y * th, tw, th);
       }
     }
     // Show boosts and scores
-    ctx.fillStyle = "#000";
+    ctx.fillStyle = p1Colour;
     ctx.fillText(score.p1, 10, canvas.height-30);
     ctx.fillText("BOOST: " + player1.boost, 10, canvas.height-10);
-    ctx.fillStyle = "#f00";
+    ctx.fillStyle = p2Colour;
     ctx.fillText(score.p2, canvas.width-30, canvas.height-30);
     ctx.fillText("BOOST: " + player2.boost, canvas.width-137, canvas.height-10);
+
+    // Show pause screen if game is paused
+    if (isPaused) {
+      ctx.fillStyle = "#000";
+      ctx.fillText("GAME PAUSED", (canvas.width-170)/2, (canvas.height-50)/2);
+    }
+
+    // Show initial screen if game is starting / restarting
+    if (!gameStarted) {
+      ctx.fillStyle = "#000";
+      ctx.fillText("PRESS SPACE TO START", (canvas.width-270)/2, (canvas.height-50)/2);
+    }
   }
 
   main();
