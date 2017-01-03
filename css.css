@@ -2,17 +2,16 @@
   font-family: 'Orbitron', sans-serif;
 }
 
-h1, h3 {
+h1, h3, form{
   text-align: center;
 }
 
-.select {
-  cursor: pointer;
+#play {
+  text-align: center;
 }
 
-.red {
-  color: red;
-  text-align: right;
+.hide {
+  visibility: hidden;
 }
 
 .middle {
@@ -20,20 +19,6 @@ h1, h3 {
   margin: auto;
   left: 50vw;
   transform: translate(-50%, 0);
-}
-
-.right, .left {
-  position: fixed;
-  margin: auto;
-  top: 0;
-}
-
-.left {
-  left: 10vw;
-}
-
-.right {
-  right: 10vw;
 }
 
 canvas {

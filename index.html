@@ -9,27 +9,41 @@
 	<div class="middle">
 		<h1>BM Tron</h1>
 		<div id="game-mode-select">
-			<h3>Choose game mode:</h3>
-			<h4 class="select" onclick="startGame(true)">One Player</h4>
-			<h4 class="select" onclick="startGame(false)">Two Players</h4>
+			<h3>Select the number of human players:</h3>
+			<form>
+				<input type="radio" value="1" name="mode" id="one" checked>One</input>
+				<input type="radio" value="2" name="mode" id="two">Two</input>
+				<input type="radio" value="3" name="mode" id="three">Three</input>
+				<input type="radio" value="4" name="mode" id="four">Four</input>
+			</form>
+			<p id="play"><button>Play</button></p>
+
+			<div id="player1-info">
+				<p>Player 1 Controls
+					<br>Movement: W A S D
+					<br>Boost: Z
+					<br>Pause: P
+				</p>
+			</div>
+			<div id="player2-info" class="hide">
+				<p>Player 2 Controls
+					<br>Movement: Arrow Keys
+					<br>Boost: Enter
+				</p>
+			</div>
+			<div id="player3-info" class="hide">
+				<p>Player 3 Controls
+					<br>Movement: 5 1 2 3 (Numpad)
+					<br>Boost: +
+				</p>
+			</div>
+			<div id="player4-info" class="hide">
+				<p>Player 4 Controls
+					<br>Movement: I J K L
+					<br>Boost: M
+				</p>
+			</div>
 		</div>
-	</div>
-	<div class="right">
-		<p class="red">Player 2 Controls
-			<br>Movement: Arrow Keys
-			<br>Boost: Enter
-		</p>
-	</div>
-	<div class="left">
-		<p>Player 1 Controls
-			<br>Movement: WASD
-			<br>Boost: Z
-			<br>Pause: P
-		</p>
-		<p>Player 3 Controls
-			<br>Movement: numpad arrows
-			<br>Boost: +
-		</p>
 	</div>
 	<div id="game-container"></div>
 	<div class="footer">

@@ -1,4 +1,45 @@
-function startGame (singlePlayer) {
+function $id (e) {
+  return document.getElementById(e);
+}
+
+$id('play').onclick = function () {
+  if ($id('one').checked) {
+    startGame([false, true, true, true]);
+  } else if ($id('two').checked) {
+    startGame([false, false, true, true]);
+  } else if ($id('three').checked) {
+    startGame([false, false, false, true]);
+  } else {
+    startGame([false, false, false, false]);
+  }
+  $id('game-mode-select').innerHTML = '';
+};
+
+$id('one').onclick = function () {
+  $id('player2-info').style.visibility = 'hidden';
+  $id('player3-info').style.visibility = 'hidden';
+  $id('player4-info').style.visibility = 'hidden';
+}
+
+$id('two').onclick = function () {
+  $id('player2-info').style.visibility = 'visible';
+  $id('player3-info').style.visibility = 'hidden';
+  $id('player4-info').style.visibility = 'hidden';
+}
+
+$id('three').onclick = function () {
+  $id('player2-info').style.visibility = 'visible';
+  $id('player3-info').style.visibility = 'visible';
+  $id('player4-info').style.visibility = 'hidden';
+}
+
+$id('four').onclick = function () {
+  $id('player2-info').style.visibility = 'visible';
+  $id('player3-info').style.visibility = 'visible';
+  $id('player4-info').style.visibility = 'visible';
+}
+
+function startGame (activeAI) {
   'use strict';
 
   // Constants
@@ -41,7 +82,7 @@ function startGame (singlePlayer) {
     }
   };
 
-  var Player = function (id, left, up, right, down, boost) {
+  var Player = function (id, left, up, right, down, boost, ai) {
     this.id = id;
     this.score = 0;
     this.keystate = {
@@ -51,6 +92,8 @@ function startGame (singlePlayer) {
       down: {code: down, active: false},
       boost: {code: boost, active: false}
     };
+    this.aiActive = ai;
+    this.wonMostRecently = false;
 
     this.direction = null;
     this.last = null;
@@ -125,14 +168,14 @@ function startGame (singlePlayer) {
     };
   };
 
-  var player1 = new Player(PLAYER1, 65, 87, 68, 83, 90);
-  var player2 = new Player(PLAYER2, 37, 38, 39, 40, 13);
-  var player3 = new Player(PLAYER3, 97, 101, 99, 98, 107);
-  var player4 = new Player(PLAYER4, 1, 2, 3, 4, 5);
+  var player1 = new Player(PLAYER1, 65, 87, 68, 83, 90, activeAI[0]);
+  var player2 = new Player(PLAYER2, 37, 38, 39, 40, 13, activeAI[1]);
+  var player3 = new Player(PLAYER3, 97, 101, 99, 98, 107, activeAI[2]);
+  var player4 = new Player(PLAYER4, 74, 73, 76, 75, 77, activeAI[3]);
   players = [player1, player2, player3, player4];
 
   // Game objects
-  var canvas, ctx, frames, players, isPaused, gameStarted;
+  var canvas, ctx, frames, players, isPaused, gameStarted, screenCounter;
 
   function main () {
     // remove game mode select interface to prevent multiple instances on a single page
@@ -146,6 +189,7 @@ function startGame (singlePlayer) {
     ctx.font = '20px Orbitron';
 
     frames = 0;
+    screenCounter = 0;
 
     function setKey (player, keycode, val) {
       for (var key in player.keystate) {
@@ -233,15 +277,12 @@ function startGame (singlePlayer) {
 
     // every 3 frames, update player positions - around 20 times / sec if refresh rate of requestAnimationFrame is 60 times / sec
     if (frames % 3 === 0 && !isPaused && gameStarted) {
-      // activate player2 AI method if single-player mode is activated
-      if (singlePlayer) {
-        player2.runAI();
-        player3.runAI();
-        player4.runAI();
+      // activate the ai for the number of players
+      for (let p in players) {
+        if (players[p].aiActive) players[p].runAI();
       }
 
-      // nx1, ny1 are the next grid positions of player 1
-      // set nx1, ny1 to last grid position, then adjust to set next grid position, then stack this object to the front of the player1._queue array
+      // set nx, ny to last grid position, then adjust to set next grid position, then stack this object to the front of the player._queue array
       var playersAlive = [];
       for (let p in players) {
         if (!players[p].isDead) {
@@ -289,9 +330,14 @@ function startGame (singlePlayer) {
       }
 
       // if only one player remains, end the game and increment scores
-      if (playersAlive.length === 1) {
+      if (playersAlive.length <= 1) {
         for (let p in players) {
-          if (!players[p].isDead) players[p].score++;
+          if (!players[p].isDead) {
+            players[p].score++;
+            players[p].wonMostRecently = true;
+          } else {
+            players[p].wonMostRecently = false;
+          }
         }
         return init();
       }
@@ -331,7 +377,7 @@ function startGame (singlePlayer) {
     // Show boosts and scores
     for (let p in players) {
       ctx.fillStyle = '#000';
-      ctx.fillText('Player ' + (players[p].id - 1) + ': ' + players[p].score, canvas.width * ((Number(p) + 1) / (players.length + 1)) - 60, canvas.height - 30);
+      ctx.fillText(((players[p].aiActive) ? 'AI ' : 'Player ') + (players[p].id - 1) + ': ' + players[p].score, canvas.width * ((Number(p) + 1) / (players.length + 1)) - 60, canvas.height - 30);
       ctx.fillText('Boost: ' + players[p].boost, canvas.width * ((Number(p) + 1) / (players.length + 1)) - 60, canvas.height - 10);
     }
 
@@ -344,6 +390,13 @@ function startGame (singlePlayer) {
     // Show initial screen if game is starting / restarting
     if (!gameStarted) {
       ctx.fillStyle = '#000';
+      for (let p in players) {
+        if (players[p].wonMostRecently) {
+          ctx.fillText('PLAYER ' + (players[p].id - 1) + ' WINS!', (canvas.width - 170) / 2, (canvas.height - 150) / 2);
+        } else if (screenCounter > 0) {
+          ctx.fillText('DRAW!', (canvas.width - 100) / 2, (canvas.height - 150) / 2);
+        }
+      }
       ctx.fillText('PRESS SPACE TO START', (canvas.width - 270) / 2, (canvas.height - 50) / 2);
     }
   }
