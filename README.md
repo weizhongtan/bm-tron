@@ -3,7 +3,5 @@ Created using JavaScript and HTML Canvas by Wei-Zhong Tan. A modification of the
 
 To Do:
 * Improve AI
-* Allow for up to 4 players
 * Sound effects
-* Integrated start menu and pause menu
 * Convert to modules
