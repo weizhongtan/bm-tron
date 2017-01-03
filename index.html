@@ -8,20 +8,26 @@
 <body>
 	<div class="middle">
 		<h1>BM Tron</h1>
-		<h3>2 Player Game</h3>
+		<div id="game-mode-select">
+			<h3>Choose game mode:</h3>
+			<h4 class="select" onclick="startGame(true)">One Player</h4>
+			<h4 class="select" onclick="startGame(false)">Two Players</h4>
+		</div>
 	</div>
 	<div class="right">
-		<p class="red">Player 1 Controls
+		<p class="red">Player 2 Controls
 			<br>Movement: Arrow Keys
-			<br>Boost: Enter Key
+			<br>Boost: Enter
 		</p>
 	</div>
 	<div class="left">
-		<p>Player 2 Controls
+		<p>Player 1 Controls
 			<br>Movement: WASD
 			<br>Boost: B
+			<br>Pause: P
 		</p>
 	</div>
+	<div id="game-container"></div>
 	<div class="footer">
 		<h5>Created using JavaScript and HTML Canvas by Wei-Zhong Tan. 18/09/16. A modification of the <a href="https://www.youtube.com/watch?v=uU5YPIvJ24Y" target=_blank>Snake Game tutorial by Max Wihlborg</a>.</h5>
 	</div>
