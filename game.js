@@ -1,10 +1,10 @@
 function startGame(singlePlayer) {
-  "use strict";
+  'use strict';
 
   // Constants
   var COLS = 120, ROWS = 80;
   // IDs
-  var EMPTY = 0, PLAYER1 = 1, PLAYER2 = 2, EDGE = 3;
+  var EMPTY = 0, EDGE = 1, PLAYER1 = 2, PLAYER2 = 3;
   // Directions
   var LEFT = 0, UP = 1, RIGHT = 2, DOWN = 3;
   // KeyCodes
@@ -44,7 +44,6 @@ function startGame(singlePlayer) {
   };
 
   var Player = function() {
-
     this.direction = null;
     this.last = null;
     this._queue = null;
@@ -52,6 +51,7 @@ function startGame(singlePlayer) {
     this.boosted = null;
     this.boostframe = null;
     this.isDead = null;
+    this.previousMoves = null;
 
     this.init = function(d, x, y, b) {
       this.direction = d;
@@ -61,80 +61,61 @@ function startGame(singlePlayer) {
 
       this.boost = b;
       this.boosted = false;
+      this.isDead = false;
+      this.previousMoves = [];
     };
 
     this.insert = function(x, y) {
       this._queue.unshift({x: x, y: y});
       this.last = this._queue[0];
     };
+
+    this.runAI = function() {
+      var currDirection = this.direction;
+      var x = this.last.x;
+      var y = this.last.y;
+      var aboutToDie = false;
+
+      function possibleDirections () {
+        var possible = [];
+        if (grid.get(x - 1, y) === EMPTY) {
+          possible.push(LEFT);
+        } else if (currDirection === LEFT) {
+          aboutToDie = true;
+        }
+        if (grid.get(x, y - 1) === EMPTY) {
+          possible.push(UP);
+        } else if (currDirection === UP) {
+          aboutToDie = true;
+        }
+        if (grid.get(x + 1, y) === EMPTY) {
+          possible.push(RIGHT);
+        } else if (currDirection === RIGHT) {
+          aboutToDie = true;
+        }
+        if (grid.get(x, y + 1) === EMPTY) {
+          possible.push(DOWN);
+        } else if (currDirection === DOWN) {
+          aboutToDie = true;
+        }
+        return possible;
+      }
+
+      var directions = possibleDirections();
+      var num = directions.length;
+
+      var newDirection;
+      if (num > 0) {
+        if (aboutToDie || Math.random() > 0.95) {
+          newDirection = directions[Math.floor(Math.random() * num)];
+          this.direction = newDirection;
+        }
+      }
+    };
   };
 
   var player1 = new Player();
   var player2 = new Player();
-
-  // add AI to player2
-  player2.chooseDirection = function() {
-    var currDirection = this.direction;
-    var currPosX = this.last.x;
-    var currPosY = this.last.y;
-    this.previousMoves = [];
-
-    function aboutToDie(direction) {
-      switch(direction) {
-        case LEFT:
-          if (grid.get(currPosX - 1, currPosY) !== EMPTY) {
-            return true;
-          } else {
-            return false;
-          }
-        case UP:
-          if (grid.get(currPosX, currPosY - 1) !== EMPTY) {
-            return true;
-          } else {
-            return false;
-          }
-        case RIGHT:
-          if (grid.get(currPosX + 1, currPosY) !== EMPTY) {
-            return true;
-          } else {
-            return false;
-          }
-        case DOWN:
-          if (grid.get(currPosX, currPosY + 1) !== EMPTY) {
-            return true;
-          } else {
-            return false;
-          }
-      }
-    }
-
-    // randomly changes direction <5% of the time
-    var newDirection;
-    if (Math.random() > 0.95) {
-      newDirection = Math.floor(Math.random() * 4);
-    } else {
-      newDirection = currDirection;
-    }
-
-    // randomly boosts once ~10% of the time
-    if (Math.random() > 0.9) {
-      this.boosted = true;
-    } else {
-      this.boosted = false;
-    }
-
-    var counter = 0;
-    // increasing counter will make it more likely that the AI will choose a direction that will keep itself alive
-    // ai will continue to find a new direction that keeps it alive and is not the same as its' move 3 moves ago; until the counter reaches 10. then it will just die.
-    while(aboutToDie(newDirection) && counter < 10 || newDirection === this.previousMoves[2]) {
-      counter++;
-      newDirection = Math.floor(Math.random() * 4);
-    }
-    if (currDirection !== newDirection) {
-      this.previousMoves.unshift(newDirection);
-    }
-    this.direction = newDirection;
-  };
 
   // Game objects
   var canvas, ctx, keystate1, keystate2, animationRef, frames, score = {p1: 0, p2: 0}, isPaused, gameStarted;
@@ -186,21 +167,23 @@ function startGame(singlePlayer) {
   function init() {
     // initate empty grid with all 0s
     grid.init(EMPTY, COLS, ROWS);
+
+    // overwrite edge tiles
     for (var i = 0; i < COLS; i++) {
       grid.set(EDGE, i, 0);
-      grid.set(EDGE, i, ROWS-1);
+      grid.set(EDGE, i, ROWS - 1);
     }
     for (var j = 0; j < ROWS; j++) {
       grid.set(EDGE, 0, j);
-      grid.set(EDGE, COLS-1, j);
+      grid.set(EDGE, COLS - 1, j);
     }
 
     // set starting positions
-    var sp = {x: Math.floor(COLS/2-1), y: Math.floor(ROWS/2)};
+    var sp = {x: Math.floor(COLS / 2 - 1), y: Math.floor(ROWS / 2)};
     player1.init(LEFT, sp.x, sp.y, MAX_BOOST);
     grid.set(PLAYER1, sp.x, sp.y);
 
-    sp = {x: Math.floor(COLS/2), y: Math.floor(ROWS/2)};
+    sp = {x: Math.floor(COLS / 2), y: Math.floor(ROWS / 2)};
     player2.init(RIGHT, sp.x, sp.y, MAX_BOOST);
     grid.set(PLAYER2, sp.x, sp.y);
 
@@ -241,10 +224,11 @@ function startGame(singlePlayer) {
     // every 3 frames, update player positions - around 20 times / sec if refresh rate of requestAnimationFrame is 60 times / sec
     if (frames % 3 === 0 && !isPaused && gameStarted) {
       // activate player2 AI method if single-player mode is activated
-      if (singlePlayer) player2.chooseDirection();
+      if (singlePlayer) player2.runAI();
 
       // nx1, ny1 are the next grid positions of player 1
       // set nx1, ny1 to last grid position, then adjust to set next grid position, then stack this object to the front of the player1._queue array
+
       var nx1 = player1.last.x;
       var ny1 = player1.last.y;
 
@@ -264,7 +248,7 @@ function startGame(singlePlayer) {
         player1.boost++;
       }
 
-      switch(player1.direction) {
+      switch (player1.direction) {
         case LEFT:
           nx1 -= vel;
           break;
@@ -285,11 +269,11 @@ function startGame(singlePlayer) {
         player2.boost--;
         player2.boostframe = frames;
       }
-      if (frames > player2.boostframe + RECHARGE_FRAMES && player2.boost < MAX_BOOST && frames % 9===0) {
+      if (frames > player2.boostframe + RECHARGE_FRAMES && player2.boost < MAX_BOOST && frames % 9 === 0) {
         player2.boost++;
       }
 
-      switch(player2.direction) {
+      switch (player2.direction) {
         case LEFT:
           nx2 -= vel;
           break;
@@ -337,38 +321,38 @@ function startGame(singlePlayer) {
       for (var y = 0; y < grid.height; y++) {
         switch (grid.get(x, y)) {
           case EMPTY:
-          ctx.fillStyle = '#ccc';
-          break;
+            ctx.fillStyle = '#ccc';
+            break;
           case EDGE:
-          ctx.fillStyle = '#000';
-          break;
+            ctx.fillStyle = '#000';
+            break;
           case PLAYER1:
-          ctx.fillStyle = 'rgb(' + redValue + ',255,0)';
-          break;
+            ctx.fillStyle = 'rgb(' + redValue + ',255,0)';
+            break;
           case PLAYER2:
-          ctx.fillStyle = 'rgb(' + redValue + ',0,255)';
-          break;
+            ctx.fillStyle = 'rgb(' + redValue + ',0,255)';
+            break;
         }
         ctx.fillRect(x * tw, y * th, tw, th);
       }
     }
     // Show boosts and scores
-    ctx.fillStyle = "#000";
+    ctx.fillStyle = '#000';
     ctx.fillText(score.p1, 10, canvas.height - 30);
-    ctx.fillText("BOOST: " + player1.boost, 10, canvas.height - 10);
-    ctx.fillStyle = "#f00";
+    ctx.fillText('BOOST: ' + player1.boost, 10, canvas.height - 10);
+    ctx.fillStyle = '#f00';
     ctx.fillText(score.p2, canvas.width - 30, canvas.height - 30);
-    ctx.fillText("BOOST: " + player2.boost, canvas.width - 137, canvas.height - 10);
+    ctx.fillText('BOOST: ' + player2.boost, canvas.width - 137, canvas.height - 10);
 
     // Show pause screen if game is paused
     if (isPaused) {
-      ctx.fillStyle = "#000";
-      ctx.fillText("GAME PAUSED", (canvas.width - 170) / 2, (canvas.height - 50) / 2);
+      ctx.fillStyle = '#000';
+      ctx.fillText('GAME PAUSED', (canvas.width - 170) / 2, (canvas.height - 50) / 2);
     }
 
     // Show initial screen if game is starting / restarting
     if (!gameStarted) {
-      ctx.fillStyle = "#000";
+      ctx.fillStyle = '#000';
       ctx.fillText('PRESS SPACE TO START', (canvas.width - 270) / 2, (canvas.height - 50) / 2);
     }
   }
