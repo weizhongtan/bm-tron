@@ -1,16 +1,14 @@
-function startGame(singlePlayer) {
+function startGame (singlePlayer) {
   'use strict';
 
   // Constants
   var COLS = 120, ROWS = 80;
   // IDs
-  var EMPTY = 0, EDGE = 1, PLAYER1 = 2, PLAYER2 = 3;
+  var EMPTY = 0, EDGE = 1, PLAYER1 = 2, PLAYER2 = 3, PLAYER3 = 4, PLAYER4 = 5;
   // Directions
   var LEFT = 0, UP = 1, RIGHT = 2, DOWN = 3;
-  // KeyCodes
+  // Standard KeyCodes
   var KEY_PAUSE = 80, KEY_START = 32;
-  var KEY_LEFT1 = 65, KEY_UP1 = 87, KEY_RIGHT1 = 68, KEY_DOWN1 = 83, KEY_BOOST1 = 66;
-  var KEY_LEFT2 = 37, KEY_UP2 = 38, KEY_RIGHT2 = 39, KEY_DOWN2 = 40, KEY_BOOST2 = 13;
 
   // Game Settings
   var MAX_BOOST = 30, RECHARGE_FRAMES = 300;
@@ -21,7 +19,7 @@ function startGame(singlePlayer) {
     height: null,
     _grid: null,
 
-    init: function(d, c, r) {
+    init: function (d, c, r) {
       this.width = c;
       this.height = r;
 
@@ -34,16 +32,26 @@ function startGame(singlePlayer) {
       }
     },
 
-    set: function(val, x, y) {
+    set: function (val, x, y) {
       this._grid[x][y] = val;
     },
 
-    get: function(x, y) {
+    get: function (x, y) {
       return this._grid[x][y];
     }
   };
 
-  var Player = function() {
+  var Player = function (id, left, up, right, down, boost) {
+    this.id = id;
+    this.score = 0;
+    this.keystate = {
+      left: {code: left, active: false},
+      up: {code: up, active: false},
+      right: {code: right, active: false},
+      down: {code: down, active: false},
+      boost: {code: boost, active: false}
+    };
+
     this.direction = null;
     this.last = null;
     this._queue = null;
@@ -52,8 +60,11 @@ function startGame(singlePlayer) {
     this.boostframe = null;
     this.isDead = null;
     this.previousMoves = null;
+    // next x and y positions
+    this.nx = null;
+    this.ny = null;
 
-    this.init = function(d, x, y, b) {
+    this.init = function (d, x, y, b) {
       this.direction = d;
 
       this._queue = [];
@@ -65,12 +76,12 @@ function startGame(singlePlayer) {
       this.previousMoves = [];
     };
 
-    this.insert = function(x, y) {
+    this.insert = function (x, y) {
       this._queue.unshift({x: x, y: y});
       this.last = this._queue[0];
     };
 
-    this.runAI = function() {
+    this.runAI = function () {
       var currDirection = this.direction;
       var x = this.last.x;
       var y = this.last.y;
@@ -114,13 +125,16 @@ function startGame(singlePlayer) {
     };
   };
 
-  var player1 = new Player();
-  var player2 = new Player();
+  var player1 = new Player(PLAYER1, 65, 87, 68, 83, 90);
+  var player2 = new Player(PLAYER2, 37, 38, 39, 40, 13);
+  var player3 = new Player(PLAYER3, 97, 101, 99, 98, 107);
+  var player4 = new Player(PLAYER4, 1, 2, 3, 4, 5);
+  players = [player1, player2, player3, player4];
 
   // Game objects
-  var canvas, ctx, keystate1, keystate2, animationRef, frames, score = {p1: 0, p2: 0}, isPaused, gameStarted;
+  var canvas, ctx, frames, players, isPaused, gameStarted;
 
-  function main() {
+  function main () {
     // remove game mode select interface to prevent multiple instances on a single page
     document.getElementById('game-mode-select').innerHTML = '';
     canvas = document.createElement('canvas');
@@ -132,14 +146,18 @@ function startGame(singlePlayer) {
     ctx.font = '20px Orbitron';
 
     frames = 0;
-    keystate1 = {};
-    keystate2 = {};
 
-    document.addEventListener('keydown', function(evt) {
-      if (evt.keyCode === KEY_LEFT2 || evt.keyCode === KEY_UP2 || evt.keyCode === KEY_RIGHT2 || evt.keyCode === KEY_DOWN2 || evt.keyCode === KEY_BOOST2) {
-        keystate2[evt.keyCode] = true;
-      } else {
-        keystate1[evt.keyCode] = true;
+    function setKey (player, keycode, val) {
+      for (var key in player.keystate) {
+        if (player.keystate[key].code === keycode) {
+          player.keystate[key].active = val;
+        }
+      }
+    }
+
+    document.addEventListener('keydown', function (evt) {
+      for (var player in players) {
+        setKey(players[player], evt.keyCode, true);
       }
       if (evt.keyCode === KEY_PAUSE) {
         if (!isPaused && gameStarted) {
@@ -152,11 +170,10 @@ function startGame(singlePlayer) {
         gameStarted = true;
       }
     });
-    document.addEventListener('keyup', function(evt) {
-      if (evt.keyCode === KEY_LEFT2 || evt.keyCode === KEY_UP2 || evt.keyCode === KEY_RIGHT2 || evt.keyCode === KEY_DOWN2 || evt.keyCode === KEY_BOOST2) {
-        delete keystate2[evt.keyCode];
-      } else {
-        delete keystate1[evt.keyCode];
+
+    document.addEventListener('keyup', function (evt) {
+      for (var player in players) {
+        setKey(players[player], evt.keyCode, false);
       }
     });
 
@@ -164,7 +181,7 @@ function startGame(singlePlayer) {
     loop();
   }
 
-  function init() {
+  function init () {
     // initate empty grid with all 0s
     grid.init(EMPTY, COLS, ROWS);
 
@@ -179,140 +196,109 @@ function startGame(singlePlayer) {
     }
 
     // set starting positions
-    var sp = {x: Math.floor(COLS / 2 - 1), y: Math.floor(ROWS / 2)};
-    player1.init(LEFT, sp.x, sp.y, MAX_BOOST);
-    grid.set(PLAYER1, sp.x, sp.y);
-
-    sp = {x: Math.floor(COLS / 2), y: Math.floor(ROWS / 2)};
-    player2.init(RIGHT, sp.x, sp.y, MAX_BOOST);
-    grid.set(PLAYER2, sp.x, sp.y);
+    for (let p in players) {
+      var sp = {x: Math.floor(((Number(p) + 1) / (players.length + 1)) * COLS), y: Math.floor(ROWS / 2)};
+      players[p].init((Number(p) % 2 === 0) ? UP : DOWN, sp.x, sp.y, MAX_BOOST);
+      grid.set(players[p].id, sp.x, sp.y);
+    }
 
     isPaused = false;
     gameStarted = false;
   }
 
-  function loop() {
+  function loop () {
     update();
     draw();
-
     window.requestAnimationFrame(loop, canvas);
   }
 
-  function update() {
+  function update () {
     frames++;
 
-    if (keystate1[KEY_LEFT1] && player1.direction !== RIGHT) player1.direction = LEFT;
-    if (keystate1[KEY_UP1] && player1.direction !== DOWN) player1.direction = UP;
-    if (keystate1[KEY_RIGHT1] && player1.direction !== LEFT) player1.direction = RIGHT;
-    if (keystate1[KEY_DOWN1] && player1.direction !== UP) player1.direction = DOWN;
-    if (keystate1[KEY_BOOST1]) {
-      player1.boosted = true;
-    } else {
-      player1.boosted = false;
+    function getKeystate (player) {
+      if (player.keystate.left.active && player.direction !== RIGHT) player.direction = LEFT;
+      if (player.keystate.up.active && player.direction !== DOWN) player.direction = UP;
+      if (player.keystate.right.active && player.direction !== LEFT) player.direction = RIGHT;
+      if (player.keystate.down.active && player.direction !== UP) player.direction = DOWN;
+      if (player.keystate.boost.active) {
+        player.boosted = true;
+      } else {
+        player.boosted = false;
+      }
     }
 
-    if (keystate2[KEY_LEFT2] && player2.direction !== RIGHT) player2.direction = LEFT;
-    if (keystate2[KEY_UP2] && player2.direction !== DOWN) player2.direction = UP;
-    if (keystate2[KEY_RIGHT2] && player2.direction !== LEFT) player2.direction = RIGHT;
-    if (keystate2[KEY_DOWN2] && player2.direction !== UP) player2.direction = DOWN;
-    if (keystate2[KEY_BOOST2]) {
-      player2.boosted = true;
-    } else {
-      player2.boosted = false;
+    for (var player in players) {
+      getKeystate(players[player]);
     }
 
     // every 3 frames, update player positions - around 20 times / sec if refresh rate of requestAnimationFrame is 60 times / sec
     if (frames % 3 === 0 && !isPaused && gameStarted) {
       // activate player2 AI method if single-player mode is activated
-      if (singlePlayer) player2.runAI();
+      if (singlePlayer) {
+        player2.runAI();
+        player3.runAI();
+        player4.runAI();
+      }
 
       // nx1, ny1 are the next grid positions of player 1
       // set nx1, ny1 to last grid position, then adjust to set next grid position, then stack this object to the front of the player1._queue array
+      var playersAlive = [];
+      for (let p in players) {
+        if (!players[p].isDead) {
+          var nx = players[p].last.x;
+          var ny = players[p].last.y;
 
-      var nx1 = player1.last.x;
-      var ny1 = player1.last.y;
+          /* Normal speed is 1, if boost button is pressed, double velocity.
+          Recharge boost if a certain amount of time time has elapsed since the boost was last used
+          */
+          var vel = 1;
+          if (players[p].boosted && players[p].boost > 0) {
+            vel = 2;
+            players[p].boost--;
+            players[p].boostframe = frames;
+          }
+          if (frames > players[p].boostframe + RECHARGE_FRAMES && players[p].boost < MAX_BOOST && frames % 9 === 0) {
+            players[p].boost++;
+          }
 
-      var nx2 = player2.last.x;
-      var ny2 = player2.last.y;
+          switch (players[p].direction) {
+            case LEFT:
+              nx -= vel;
+              break;
+            case UP:
+              ny -= vel;
+              break;
+            case RIGHT:
+              nx += vel;
+              break;
+            case DOWN:
+              ny += vel;
+              break;
+          }
 
-      /* Normal speed is 1, if boost button is pressed, double velocity.
-      Recharge boost if a certain amount of time time has elapsed since the boost was last used
-      */
-      var vel = 1;
-      if (player1.boosted && player1.boost > 0) {
-        vel = 2;
-        player1.boost--;
-        player1.boostframe = frames;
-      }
-      if (frames > player1.boostframe + RECHARGE_FRAMES && player1.boost < MAX_BOOST && frames % 9 === 0) {
-        player1.boost++;
-      }
-
-      switch (player1.direction) {
-        case LEFT:
-          nx1 -= vel;
-          break;
-        case UP:
-          ny1 -= vel;
-          break;
-        case RIGHT:
-          nx1 += vel;
-          break;
-        case DOWN:
-          ny1 += vel;
-          break;
-      }
-
-      vel = 1;
-      if (player2.boosted && player2.boost > 0) {
-        vel = 2;
-        player2.boost--;
-        player2.boostframe = frames;
-      }
-      if (frames > player2.boostframe + RECHARGE_FRAMES && player2.boost < MAX_BOOST && frames % 9 === 0) {
-        player2.boost++;
-      }
-
-      switch (player2.direction) {
-        case LEFT:
-          nx2 -= vel;
-          break;
-        case UP:
-          ny2 -= vel;
-          break;
-        case RIGHT:
-          nx2 += vel;
-          break;
-        case DOWN:
-          ny2 += vel;
-          break;
+          // if dead, update player object - this will prevent it from being moving until the game ends
+          if (grid.get(nx, ny) !== EMPTY) {
+            players[p].isDead = true;
+          } else {
+            // update grid and player objects to match new player head positions
+            grid.set(players[p].id, nx, ny);
+            players[p].insert(nx, ny);
+            playersAlive.push(players[p]);
+          }
+        }
       }
 
-      // check for deaths or draws
-      if (grid.get(nx1, ny1) !== EMPTY) player1.isDead = true;
-      if (grid.get(nx2, ny2) !== EMPTY) player2.isDead = true;
-
-      // if both players are dead, draw, else increment scores
-      if (player1.isDead && player2.isDead) {
-        return init();
-      } else if (player1.isDead) {
-        score.p2++;
-        return init();
-      } else if (player2.isDead) {
-        score.p1++;
+      // if only one player remains, end the game and increment scores
+      if (playersAlive.length === 1) {
+        for (let p in players) {
+          if (!players[p].isDead) players[p].score++;
+        }
         return init();
       }
-
-      // update grid and player objects to match new player head positions
-      grid.set(PLAYER1, nx1, ny1);
-      grid.set(PLAYER2, nx2, ny2);
-
-      player1.insert(nx1, ny1);
-      player2.insert(nx2, ny2);
     }
   }
 
-  function draw() {
+  function draw () {
     var tw = canvas.width / grid.width;
     var th = canvas.height / grid.height;
     var redValue = frames % 255 < 128 ? (frames % 255) * 2 : (255 - frames % 255) * 2;
@@ -332,17 +318,22 @@ function startGame(singlePlayer) {
           case PLAYER2:
             ctx.fillStyle = 'rgb(' + redValue + ',0,255)';
             break;
+          case PLAYER3:
+            ctx.fillStyle = 'rgb(' + redValue + ',85,170)';
+            break;
+          case PLAYER4:
+            ctx.fillStyle = 'rgb(' + redValue + ',170,85)';
+            break;
         }
         ctx.fillRect(x * tw, y * th, tw, th);
       }
     }
     // Show boosts and scores
-    ctx.fillStyle = '#000';
-    ctx.fillText(score.p1, 10, canvas.height - 30);
-    ctx.fillText('BOOST: ' + player1.boost, 10, canvas.height - 10);
-    ctx.fillStyle = '#f00';
-    ctx.fillText(score.p2, canvas.width - 30, canvas.height - 30);
-    ctx.fillText('BOOST: ' + player2.boost, canvas.width - 137, canvas.height - 10);
+    for (let p in players) {
+      ctx.fillStyle = '#000';
+      ctx.fillText('Player ' + (players[p].id - 1) + ': ' + players[p].score, canvas.width * ((Number(p) + 1) / (players.length + 1)) - 60, canvas.height - 30);
+      ctx.fillText('Boost: ' + players[p].boost, canvas.width * ((Number(p) + 1) / (players.length + 1)) - 60, canvas.height - 10);
+    }
 
     // Show pause screen if game is paused
     if (isPaused) {
@@ -358,5 +349,4 @@ function startGame(singlePlayer) {
   }
 
   main();
-
 }
