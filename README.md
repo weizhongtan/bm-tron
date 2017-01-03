@@ -6,5 +6,3 @@ To Do:
 * Allow for up to 4 players
 * Sound effects
 * Integrated start menu and pause menu
-
-18/09/16
