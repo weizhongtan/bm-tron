@@ -1,7 +1,7 @@
 import { $id } from './lib';
 import { startGame } from './game';
 
-$id('play').onclick = function () {
+$id('play').onclick = () => {
   if ($id('one').checked) {
     startGame([false, true, true, true]);
   } else if ($id('two').checked) {
@@ -14,26 +14,26 @@ $id('play').onclick = function () {
   $id('game-mode-select').innerHTML = '';
 };
 
-$id('one').onclick = function () {
+$id('one').onclick = () => {
   $id('player2-info').style.visibility = 'hidden';
   $id('player3-info').style.visibility = 'hidden';
   $id('player4-info').style.visibility = 'hidden';
-}
+};
 
-$id('two').onclick = function () {
+$id('two').onclick = () => {
   $id('player2-info').style.visibility = 'visible';
   $id('player3-info').style.visibility = 'hidden';
   $id('player4-info').style.visibility = 'hidden';
-}
+};
 
-$id('three').onclick = function () {
+$id('three').onclick = () => {
   $id('player2-info').style.visibility = 'visible';
   $id('player3-info').style.visibility = 'visible';
   $id('player4-info').style.visibility = 'hidden';
-}
+};
 
-$id('four').onclick = function () {
+$id('four').onclick = () => {
   $id('player2-info').style.visibility = 'visible';
   $id('player3-info').style.visibility = 'visible';
   $id('player4-info').style.visibility = 'visible';
-}
+};

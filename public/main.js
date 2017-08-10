@@ -1,15 +1,36 @@
-export function startGame(activeAI) {
+(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.startGame = startGame;
+function startGame(activeAI) {
+  'use strict';
+
   // Constants
-  var COLS = 120, ROWS = 80;
+
+  var COLS = 120,
+      ROWS = 80;
   // IDs
-  var EMPTY = 0, EDGE = 1, PLAYER1 = 2, PLAYER2 = 3, PLAYER3 = 4, PLAYER4 = 5;
+  var EMPTY = 0,
+      EDGE = 1,
+      PLAYER1 = 2,
+      PLAYER2 = 3,
+      PLAYER3 = 4,
+      PLAYER4 = 5;
   // Directions
-  var LEFT = 0, UP = 1, RIGHT = 2, DOWN = 3;
+  var LEFT = 0,
+      UP = 1,
+      RIGHT = 2,
+      DOWN = 3;
   // Standard KeyCodes
-  var KEY_PAUSE = 80, KEY_START = 32;
+  var KEY_PAUSE = 80,
+      KEY_START = 32;
 
   // Game Settings
-  var MAX_BOOST = 30, RECHARGE_FRAMES = 300;
+  var MAX_BOOST = 30,
+      RECHARGE_FRAMES = 300;
 
   var grid = {
 
@@ -17,7 +38,7 @@ export function startGame(activeAI) {
     height: null,
     _grid: null,
 
-    init: function (d, c, r) {
+    init: function init(d, c, r) {
       this.width = c;
       this.height = r;
 
@@ -30,24 +51,24 @@ export function startGame(activeAI) {
       }
     },
 
-    set: function (val, x, y) {
+    set: function set(val, x, y) {
       this._grid[x][y] = val;
     },
 
-    get: function (x, y) {
+    get: function get(x, y) {
       return this._grid[x][y];
     }
   };
 
-  var Player = function (id, left, up, right, down, boost, ai) {
+  var Player = function Player(id, left, up, right, down, boost, ai) {
     this.id = id;
     this.score = 0;
     this.keystate = {
-      left: {code: left, active: false},
-      up: {code: up, active: false},
-      right: {code: right, active: false},
-      down: {code: down, active: false},
-      boost: {code: boost, active: false}
+      left: { code: left, active: false },
+      up: { code: up, active: false },
+      right: { code: right, active: false },
+      down: { code: down, active: false },
+      boost: { code: boost, active: false }
     };
     this.aiActive = ai;
     this.wonMostRecently = false;
@@ -77,7 +98,7 @@ export function startGame(activeAI) {
     };
 
     this.insert = function (x, y) {
-      this._queue.unshift({x: x, y: y});
+      this._queue.unshift({ x: x, y: y });
       this.last = this._queue[0];
     };
 
@@ -87,7 +108,7 @@ export function startGame(activeAI) {
       var y = this.last.y;
       var aboutToDie = false;
 
-      function possibleDirections () {
+      function possibleDirections() {
         var possible = [];
         if (grid.get(x - 1, y) === EMPTY) {
           possible.push(LEFT);
@@ -134,7 +155,7 @@ export function startGame(activeAI) {
   // Game objects
   var canvas, ctx, frames, players, isPaused, gameStarted, screenCounter;
 
-  function main () {
+  function main() {
     // remove game mode select interface to prevent multiple instances on a single page
     document.getElementById('game-mode-select').innerHTML = '';
     canvas = document.createElement('canvas');
@@ -148,7 +169,7 @@ export function startGame(activeAI) {
     frames = 0;
     screenCounter = 0;
 
-    function setKey (player, keycode, val) {
+    function setKey(player, keycode, val) {
       for (var key in player.keystate) {
         if (player.keystate[key].code === keycode) {
           player.keystate[key].active = val;
@@ -182,7 +203,7 @@ export function startGame(activeAI) {
     loop();
   }
 
-  function init () {
+  function init() {
     // initate empty grid with all 0s
     grid.init(EMPTY, COLS, ROWS);
 
@@ -197,9 +218,9 @@ export function startGame(activeAI) {
     }
 
     // set starting positions
-    for (let p in players) {
-      var sp = {x: Math.floor(((Number(p) + 1) / (players.length + 1)) * COLS), y: Math.floor(ROWS / 2)};
-      players[p].init((Number(p) % 2 === 0) ? UP : DOWN, sp.x, sp.y, MAX_BOOST);
+    for (var p in players) {
+      var sp = { x: Math.floor((Number(p) + 1) / (players.length + 1) * COLS), y: Math.floor(ROWS / 2) };
+      players[p].init(Number(p) % 2 === 0 ? UP : DOWN, sp.x, sp.y, MAX_BOOST);
       grid.set(players[p].id, sp.x, sp.y);
     }
 
@@ -207,16 +228,16 @@ export function startGame(activeAI) {
     gameStarted = false;
   }
 
-  function loop () {
+  function loop() {
     update();
     draw();
     window.requestAnimationFrame(loop, canvas);
   }
 
-  function update () {
+  function update() {
     frames++;
 
-    function getKeystate (player) {
+    function getKeystate(player) {
       if (player.keystate.left.active && player.direction !== RIGHT) player.direction = LEFT;
       if (player.keystate.up.active && player.direction !== DOWN) player.direction = UP;
       if (player.keystate.right.active && player.direction !== LEFT) player.direction = RIGHT;
@@ -235,31 +256,31 @@ export function startGame(activeAI) {
     // every 3 frames, update player positions - around 20 times / sec if refresh rate of requestAnimationFrame is 60 times / sec
     if (frames % 3 === 0 && !isPaused && gameStarted) {
       // activate the ai for the number of players
-      for (let p in players) {
+      for (var p in players) {
         if (players[p].aiActive) players[p].runAI();
       }
 
       // set nx, ny to last grid position, then adjust to set next grid position, then stack this object to the front of the player._queue array
       var playersAlive = [];
-      for (let p in players) {
-        if (!players[p].isDead) {
-          var nx = players[p].last.x;
-          var ny = players[p].last.y;
+      for (var _p in players) {
+        if (!players[_p].isDead) {
+          var nx = players[_p].last.x;
+          var ny = players[_p].last.y;
 
           /* Normal speed is 1, if boost button is pressed, double velocity.
           Recharge boost if a certain amount of time time has elapsed since the boost was last used
           */
           var vel = 1;
-          if (players[p].boosted && players[p].boost > 0) {
+          if (players[_p].boosted && players[_p].boost > 0) {
             vel = 2;
-            players[p].boost--;
-            players[p].boostframe = frames;
+            players[_p].boost--;
+            players[_p].boostframe = frames;
           }
-          if (frames > players[p].boostframe + RECHARGE_FRAMES && players[p].boost < MAX_BOOST && frames % 9 === 0) {
-            players[p].boost++;
+          if (frames > players[_p].boostframe + RECHARGE_FRAMES && players[_p].boost < MAX_BOOST && frames % 9 === 0) {
+            players[_p].boost++;
           }
 
-          switch (players[p].direction) {
+          switch (players[_p].direction) {
             case LEFT:
               nx -= vel;
               break;
@@ -276,24 +297,24 @@ export function startGame(activeAI) {
 
           // if dead, update player object - this will prevent it from being moving until the game ends
           if (grid.get(nx, ny) !== EMPTY) {
-            players[p].isDead = true;
+            players[_p].isDead = true;
           } else {
             // update grid and player objects to match new player head positions
-            grid.set(players[p].id, nx, ny);
-            players[p].insert(nx, ny);
-            playersAlive.push(players[p]);
+            grid.set(players[_p].id, nx, ny);
+            players[_p].insert(nx, ny);
+            playersAlive.push(players[_p]);
           }
         }
       }
 
       // if only one player remains, end the game and increment scores
       if (playersAlive.length <= 1) {
-        for (let p in players) {
-          if (!players[p].isDead) {
-            players[p].score++;
-            players[p].wonMostRecently = true;
+        for (var _p2 in players) {
+          if (!players[_p2].isDead) {
+            players[_p2].score++;
+            players[_p2].wonMostRecently = true;
           } else {
-            players[p].wonMostRecently = false;
+            players[_p2].wonMostRecently = false;
           }
         }
         return init();
@@ -301,10 +322,10 @@ export function startGame(activeAI) {
     }
   }
 
-  function draw () {
+  function draw() {
     var tw = canvas.width / grid.width;
     var th = canvas.height / grid.height;
-    var redValue = frames % 255 < 128 ? (frames % 255) * 2 : (255 - frames % 255) * 2;
+    var redValue = frames % 255 < 128 ? frames % 255 * 2 : (255 - frames % 255) * 2;
 
     for (var x = 0; x < grid.width; x++) {
       for (var y = 0; y < grid.height; y++) {
@@ -332,9 +353,9 @@ export function startGame(activeAI) {
       }
     }
     // Show boosts and scores
-    for (let p in players) {
+    for (var p in players) {
       ctx.fillStyle = '#000';
-      ctx.fillText(((players[p].aiActive) ? 'AI ' : 'Player ') + (players[p].id - 1) + ': ' + players[p].score, canvas.width * ((Number(p) + 1) / (players.length + 1)) - 60, canvas.height - 30);
+      ctx.fillText((players[p].aiActive ? 'AI ' : 'Player ') + (players[p].id - 1) + ': ' + players[p].score, canvas.width * ((Number(p) + 1) / (players.length + 1)) - 60, canvas.height - 30);
       ctx.fillText('Boost: ' + players[p].boost, canvas.width * ((Number(p) + 1) / (players.length + 1)) - 60, canvas.height - 10);
     }
 
@@ -347,9 +368,9 @@ export function startGame(activeAI) {
     // Show initial screen if game is starting / restarting
     if (!gameStarted) {
       ctx.fillStyle = '#000';
-      for (let p in players) {
-        if (players[p].wonMostRecently) {
-          ctx.fillText('PLAYER ' + (players[p].id - 1) + ' WINS!', (canvas.width - 170) / 2, (canvas.height - 150) / 2);
+      for (var _p3 in players) {
+        if (players[_p3].wonMostRecently) {
+          ctx.fillText('PLAYER ' + (players[_p3].id - 1) + ' WINS!', (canvas.width - 170) / 2, (canvas.height - 150) / 2);
         } else if (screenCounter > 0) {
           ctx.fillText('DRAW!', (canvas.width - 100) / 2, (canvas.height - 150) / 2);
         }
@@ -360,3 +381,60 @@ export function startGame(activeAI) {
 
   main();
 }
+
+},{}],2:[function(require,module,exports){
+'use strict';
+
+var _lib = require('./lib');
+
+var _game = require('./game');
+
+(0, _lib.$id)('play').onclick = function () {
+  if ((0, _lib.$id)('one').checked) {
+    (0, _game.startGame)([false, true, true, true]);
+  } else if ((0, _lib.$id)('two').checked) {
+    (0, _game.startGame)([false, false, true, true]);
+  } else if ((0, _lib.$id)('three').checked) {
+    (0, _game.startGame)([false, false, false, true]);
+  } else {
+    (0, _game.startGame)([false, false, false, false]);
+  }
+  (0, _lib.$id)('game-mode-select').innerHTML = '';
+};
+
+(0, _lib.$id)('one').onclick = function () {
+  (0, _lib.$id)('player2-info').style.visibility = 'hidden';
+  (0, _lib.$id)('player3-info').style.visibility = 'hidden';
+  (0, _lib.$id)('player4-info').style.visibility = 'hidden';
+};
+
+(0, _lib.$id)('two').onclick = function () {
+  (0, _lib.$id)('player2-info').style.visibility = 'visible';
+  (0, _lib.$id)('player3-info').style.visibility = 'hidden';
+  (0, _lib.$id)('player4-info').style.visibility = 'hidden';
+};
+
+(0, _lib.$id)('three').onclick = function () {
+  (0, _lib.$id)('player2-info').style.visibility = 'visible';
+  (0, _lib.$id)('player3-info').style.visibility = 'visible';
+  (0, _lib.$id)('player4-info').style.visibility = 'hidden';
+};
+
+(0, _lib.$id)('four').onclick = function () {
+  (0, _lib.$id)('player2-info').style.visibility = 'visible';
+  (0, _lib.$id)('player3-info').style.visibility = 'visible';
+  (0, _lib.$id)('player4-info').style.visibility = 'visible';
+};
+
+},{"./game":1,"./lib":3}],3:[function(require,module,exports){
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.$id = $id;
+function $id(e) {
+  return document.getElementById(e);
+}
+
+},{}]},{},[2]);
